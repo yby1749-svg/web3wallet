@@ -9,6 +9,7 @@
 import { ethers, HDNodeWallet, Mnemonic } from 'ethers';
 import { WalletAccount } from '../../types';
 import { keyManager } from './KeyManager';
+import 'react-native-get-random-values';
 
 // BIP44 경로: m/44'/60'/0'/0/index
 const DERIVATION_PATH = "m/44'/60'/0'/0/0";
@@ -18,8 +19,12 @@ class WalletService {
    * 새로운 니모닉 생성 (12단어)
    */
   generateMnemonic(): string {
-    const wallet = ethers.Wallet.createRandom();
-    return wallet.mnemonic?.phrase || '';
+    // Use crypto.getRandomValues directly via polyfill
+    // 16 bytes of entropy = 12 word mnemonic (128 bits)
+    const entropy = new Uint8Array(16);
+    crypto.getRandomValues(entropy);
+    const mnemonic = Mnemonic.fromEntropy(entropy);
+    return mnemonic.phrase;
   }
 
   /**

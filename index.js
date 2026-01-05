@@ -2,8 +2,8 @@
  * Web3 Wallet Entry Point
  */
 
-// Polyfills must be imported FIRST
-import 'react-native-get-random-values';
+// Polyfills MUST be imported FIRST before any other imports
+import './shim';
 
 import { AppRegistry } from 'react-native';
 import App from './App';
