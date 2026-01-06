@@ -4,6 +4,7 @@ import { Chain } from '../types';
 // For production, use your own Alchemy/Infura API key
 
 export const CHAINS: Record<number, Chain> = {
+  // ============ Mainnet ============
   1: {
     chainId: 1,
     name: 'Ethereum',
@@ -15,14 +16,56 @@ export const CHAINS: Record<number, Chain> = {
   137: {
     chainId: 137,
     name: 'Polygon',
-    symbol: 'MATIC',
+    symbol: 'POL',
     rpcUrl: 'https://polygon.llamarpc.com',
     explorerUrl: 'https://polygonscan.com',
     isTestnet: false,
   },
+  42161: {
+    chainId: 42161,
+    name: 'Arbitrum One',
+    symbol: 'ETH',
+    rpcUrl: 'https://arbitrum.llamarpc.com',
+    explorerUrl: 'https://arbiscan.io',
+    isTestnet: false,
+  },
+  10: {
+    chainId: 10,
+    name: 'Optimism',
+    symbol: 'ETH',
+    rpcUrl: 'https://optimism.llamarpc.com',
+    explorerUrl: 'https://optimistic.etherscan.io',
+    isTestnet: false,
+  },
+  8453: {
+    chainId: 8453,
+    name: 'Base',
+    symbol: 'ETH',
+    rpcUrl: 'https://base.llamarpc.com',
+    explorerUrl: 'https://basescan.org',
+    isTestnet: false,
+  },
+  56: {
+    chainId: 56,
+    name: 'BNB Smart Chain',
+    symbol: 'BNB',
+    rpcUrl: 'https://binance.llamarpc.com',
+    explorerUrl: 'https://bscscan.com',
+    isTestnet: false,
+  },
+  43114: {
+    chainId: 43114,
+    name: 'Avalanche C-Chain',
+    symbol: 'AVAX',
+    rpcUrl: 'https://avalanche.public-rpc.com',
+    explorerUrl: 'https://snowtrace.io',
+    isTestnet: false,
+  },
+
+  // ============ Testnet ============
   11155111: {
     chainId: 11155111,
-    name: 'Sepolia (Testnet)',
+    name: 'Sepolia',
     symbol: 'ETH',
     rpcUrl: 'https://rpc.sepolia.org',
     explorerUrl: 'https://sepolia.etherscan.io',
@@ -30,10 +73,42 @@ export const CHAINS: Record<number, Chain> = {
   },
   80002: {
     chainId: 80002,
-    name: 'Polygon Amoy (Testnet)',
-    symbol: 'MATIC',
+    name: 'Polygon Amoy',
+    symbol: 'POL',
     rpcUrl: 'https://rpc-amoy.polygon.technology',
     explorerUrl: 'https://amoy.polygonscan.com',
+    isTestnet: true,
+  },
+  421614: {
+    chainId: 421614,
+    name: 'Arbitrum Sepolia',
+    symbol: 'ETH',
+    rpcUrl: 'https://sepolia-rollup.arbitrum.io/rpc',
+    explorerUrl: 'https://sepolia.arbiscan.io',
+    isTestnet: true,
+  },
+  11155420: {
+    chainId: 11155420,
+    name: 'Optimism Sepolia',
+    symbol: 'ETH',
+    rpcUrl: 'https://sepolia.optimism.io',
+    explorerUrl: 'https://sepolia-optimism.etherscan.io',
+    isTestnet: true,
+  },
+  84532: {
+    chainId: 84532,
+    name: 'Base Sepolia',
+    symbol: 'ETH',
+    rpcUrl: 'https://sepolia.base.org',
+    explorerUrl: 'https://sepolia.basescan.org',
+    isTestnet: true,
+  },
+  97: {
+    chainId: 97,
+    name: 'BNB Testnet',
+    symbol: 'tBNB',
+    rpcUrl: 'https://data-seed-prebsc-1-s1.binance.org:8545',
+    explorerUrl: 'https://testnet.bscscan.com',
     isTestnet: true,
   },
 };
