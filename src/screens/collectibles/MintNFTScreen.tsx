@@ -7,16 +7,18 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   Alert,
   Image,
   TouchableOpacity,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { launchImageLibrary, Asset } from 'react-native-image-picker';
+import Clipboard from '@react-native-clipboard/clipboard';
 import { RootStackParamList } from '../../types';
 import { useWalletStore } from '../../stores/walletStore';
 import { useNetworkStore } from '../../stores/networkStore';
@@ -29,6 +31,15 @@ import { Input } from '../../components/Input';
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'MintNFT'>;
 
 type MintStep = 'input' | 'uploading' | 'minting' | 'complete' | 'error';
+
+// Progress step definitions
+const MINT_STEPS = [
+  { id: 1, label: 'Uploading Image', description: 'Uploading to IPFS...' },
+  { id: 2, label: 'Creating Metadata', description: 'Generating NFT metadata...' },
+  { id: 3, label: 'Uploading Metadata', description: 'Storing on IPFS...' },
+  { id: 4, label: 'Sending Transaction', description: 'Minting on blockchain...' },
+  { id: 5, label: 'Confirming', description: 'Waiting for confirmation...' },
+];
 
 export const MintNFTScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
@@ -44,9 +55,11 @@ export const MintNFTScreen: React.FC = () => {
 
   // Minting state
   const [step, setStep] = useState<MintStep>('input');
+  const [currentProgressStep, setCurrentProgressStep] = useState(0);
   const [statusMessage, setStatusMessage] = useState('');
   const [txHash, setTxHash] = useState('');
   const [tokenId, setTokenId] = useState<string | null>(null);
+  const [copiedHash, setCopiedHash] = useState(false);
 
   // Check if on Sepolia
   const isOnSepolia = currentChain.chainId === 11155111;
@@ -117,12 +130,14 @@ export const MintNFTScreen: React.FC = () => {
     try {
       // Verify PIN
       setStep('uploading');
+      setCurrentProgressStep(1);
       setStatusMessage('Verifying PIN...');
 
       const isValidPin = await keyManager.verifyPin(pin);
       if (!isValidPin) {
         setPinError('Incorrect PIN');
         setStep('input');
+        setCurrentProgressStep(0);
         return;
       }
 
@@ -134,11 +149,22 @@ export const MintNFTScreen: React.FC = () => {
       if (!privateKey) {
         Alert.alert('Error', 'Failed to retrieve private key');
         setStep('input');
+        setCurrentProgressStep(0);
         return;
       }
 
-      // Step 1: Upload to IPFS
+      // Step 1: Upload image to IPFS
+      setCurrentProgressStep(1);
       setStatusMessage('Uploading image to IPFS...');
+
+      // Step 2: Create metadata (happens inside uploadNFTData)
+      setCurrentProgressStep(2);
+      setStatusMessage('Creating NFT metadata...');
+
+      // Step 3: Upload metadata to IPFS
+      setCurrentProgressStep(3);
+      setStatusMessage('Uploading metadata to IPFS...');
+
       const { tokenURI } = await pinataService.uploadNFTData(
         selectedImage.uri,
         nftName.trim(),
@@ -149,9 +175,10 @@ export const MintNFTScreen: React.FC = () => {
         ]
       );
 
-      // Step 2: Mint NFT
+      // Step 4: Mint NFT on blockchain
       setStep('minting');
-      setStatusMessage('Minting NFT on blockchain...');
+      setCurrentProgressStep(4);
+      setStatusMessage('Sending mint transaction...');
 
       const result = await nftMintService.mint(
         privateKey,
@@ -160,9 +187,11 @@ export const MintNFTScreen: React.FC = () => {
       );
 
       setTxHash(result.txHash);
-      setStatusMessage('Waiting for confirmation...');
 
-      // Wait for confirmation and get token ID
+      // Step 5: Wait for confirmation
+      setCurrentProgressStep(5);
+      setStatusMessage('Waiting for blockchain confirmation...');
+
       const mintedTokenId = await nftMintService.waitForMintConfirmation(
         result.txHash
       );
@@ -170,6 +199,7 @@ export const MintNFTScreen: React.FC = () => {
 
       // Success
       setStep('complete');
+      setCurrentProgressStep(6); // All steps complete
       setStatusMessage('NFT minted successfully!');
 
       // Refresh NFT list
@@ -187,90 +217,190 @@ export const MintNFTScreen: React.FC = () => {
 
   const handleRetry = () => {
     setStep('input');
+    setCurrentProgressStep(0);
     setStatusMessage('');
     setTxHash('');
     setTokenId(null);
     setPin('');
+    setCopiedHash(false);
+  };
+
+  const handleCopyTxHash = () => {
+    if (txHash) {
+      Clipboard.setString(txHash);
+      setCopiedHash(true);
+      setTimeout(() => setCopiedHash(false), 2000);
+    }
+  };
+
+  const handleOpenExplorer = () => {
+    if (txHash) {
+      const explorerUrl = `https://sepolia.etherscan.io/tx/${txHash}`;
+      Linking.openURL(explorerUrl);
+    }
+  };
+
+  // Render step indicator
+  const renderStepIndicator = (stepId: number, label: string) => {
+    const isComplete = currentProgressStep > stepId;
+    const isCurrent = currentProgressStep === stepId;
+    const isPending = currentProgressStep < stepId;
+
+    return (
+      <View key={stepId} style={styles.stepRow}>
+        <View
+          style={[
+            styles.stepCircle,
+            isComplete && styles.stepCircleComplete,
+            isCurrent && styles.stepCircleCurrent,
+            isPending && styles.stepCirclePending,
+          ]}
+        >
+          {isComplete ? (
+            <Text style={styles.stepCheckmark}>✓</Text>
+          ) : isCurrent ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <Text style={styles.stepNumber}>{stepId}</Text>
+          )}
+        </View>
+        <Text
+          style={[
+            styles.stepLabel,
+            isComplete && styles.stepLabelComplete,
+            isCurrent && styles.stepLabelCurrent,
+            isPending && styles.stepLabelPending,
+          ]}
+        >
+          {label}
+        </Text>
+      </View>
+    );
   };
 
   // Render progress screen
   if (step !== 'input') {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.progressContainer}>
-          {step === 'complete' ? (
-            <Text style={styles.progressIcon}>✅</Text>
-          ) : step === 'error' ? (
-            <Text style={styles.progressIcon}>❌</Text>
-          ) : (
-            <ActivityIndicator size="large" color="#007AFF" />
-          )}
+        <ScrollView contentContainerStyle={styles.progressScrollContent}>
+          <View style={styles.progressContainer}>
+            {/* Header Icon */}
+            {step === 'complete' ? (
+              <View style={styles.successIconContainer}>
+                <Text style={styles.successIcon}>✓</Text>
+              </View>
+            ) : step === 'error' ? (
+              <View style={styles.errorIconContainer}>
+                <Text style={styles.errorIcon}>✕</Text>
+              </View>
+            ) : null}
 
-          <Text style={styles.progressTitle}>
-            {step === 'uploading' && 'Uploading to IPFS'}
-            {step === 'minting' && 'Minting NFT'}
-            {step === 'complete' && 'Minting Complete!'}
-            {step === 'error' && 'Minting Failed'}
-          </Text>
+            {/* Title */}
+            <Text style={styles.progressTitle}>
+              {step === 'uploading' && 'Minting Your NFT'}
+              {step === 'minting' && 'Minting Your NFT'}
+              {step === 'complete' && 'Minting Complete!'}
+              {step === 'error' && 'Minting Failed'}
+            </Text>
 
-          <Text style={styles.progressMessage}>{statusMessage}</Text>
-
-          {txHash && (
-            <View style={styles.txHashContainer}>
-              <Text style={styles.txHashLabel}>Transaction Hash</Text>
-              <Text style={styles.txHash} numberOfLines={1} ellipsizeMode="middle">
-                {txHash}
-              </Text>
-            </View>
-          )}
-
-          {tokenId && (
-            <View style={styles.tokenIdContainer}>
-              <Text style={styles.tokenIdLabel}>Token ID</Text>
-              <Text style={styles.tokenId}>{tokenId}</Text>
-            </View>
-          )}
-
-          <View style={styles.progressButtons}>
-            {step === 'complete' && (
-              <Button title="Done" onPress={handleDone} style={styles.doneButton} />
+            {/* Step Progress */}
+            {step !== 'error' && (
+              <View style={styles.stepsContainer}>
+                {MINT_STEPS.map((s) => renderStepIndicator(s.id, s.label))}
+              </View>
             )}
+
+            {/* Current Status */}
+            {step !== 'complete' && step !== 'error' && (
+              <Text style={styles.progressMessage}>{statusMessage}</Text>
+            )}
+
+            {/* Error Message */}
             {step === 'error' && (
-              <>
-                <Button
-                  title="Retry"
-                  onPress={handleRetry}
-                  style={styles.retryButton}
-                />
-                <Button
-                  title="Cancel"
-                  onPress={handleDone}
-                  variant="outline"
-                  style={styles.cancelButton}
-                />
-              </>
+              <View style={styles.errorMessageContainer}>
+                <Text style={styles.errorMessage}>{statusMessage}</Text>
+              </View>
             )}
+
+            {/* Transaction Hash */}
+            {txHash && (
+              <View style={styles.txHashContainer}>
+                <Text style={styles.txHashLabel}>Transaction Hash</Text>
+                <Text style={styles.txHash} numberOfLines={1} ellipsizeMode="middle">
+                  {txHash}
+                </Text>
+                <View style={styles.txHashActions}>
+                  <TouchableOpacity
+                    style={styles.txHashButton}
+                    onPress={handleCopyTxHash}
+                  >
+                    <Text style={styles.txHashButtonText}>
+                      {copiedHash ? 'Copied!' : 'Copy'}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.txHashButton}
+                    onPress={handleOpenExplorer}
+                  >
+                    <Text style={styles.txHashButtonText}>View on Explorer</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+
+            {/* Token ID */}
+            {tokenId && (
+              <View style={styles.tokenIdContainer}>
+                <Text style={styles.tokenIdLabel}>Token ID</Text>
+                <Text style={styles.tokenId}>#{tokenId}</Text>
+              </View>
+            )}
+
+            {/* Buttons */}
+            <View style={styles.progressButtons}>
+              {step === 'complete' && (
+                <>
+                  <Button title="Done" onPress={handleDone} style={styles.doneButton} />
+                  {txHash && (
+                    <Button
+                      title="View on Etherscan"
+                      onPress={handleOpenExplorer}
+                      variant="outline"
+                      style={styles.explorerButton}
+                    />
+                  )}
+                </>
+              )}
+              {step === 'error' && (
+                <>
+                  <Button
+                    title="Retry"
+                    onPress={handleRetry}
+                    style={styles.retryButton}
+                  />
+                  <Button
+                    title="Cancel"
+                    onPress={handleDone}
+                    variant="outline"
+                    style={styles.cancelButton}
+                  />
+                </>
+              )}
+            </View>
           </View>
-        </View>
+        </ScrollView>
       </SafeAreaView>
     );
   }
 
   // Render input form
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.header}>
-          <Text style={styles.title}>Mint NFT</Text>
-          <Text style={styles.subtitle}>
-            Create your own NFT on Sepolia testnet
-          </Text>
-        </View>
-
         {/* Network Warning */}
         {!isOnSepolia && (
           <TouchableOpacity
@@ -380,7 +510,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 120,
+    paddingBottom: 24,
   },
   header: {
     marginBottom: 24,
@@ -466,13 +596,9 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   footer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
     flexDirection: 'row',
     paddingHorizontal: 16,
-    paddingBottom: 24,
+    paddingBottom: 16,
     paddingTop: 16,
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
@@ -486,28 +612,122 @@ const styles = StyleSheet.create({
     flex: 2,
   },
   // Progress screen styles
+  progressScrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingVertical: 32,
+  },
   progressContainer: {
-    flex: 1,
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  successIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#34C759',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 32,
-  },
-  progressIcon: {
-    fontSize: 64,
     marginBottom: 24,
+  },
+  successIcon: {
+    fontSize: 40,
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  errorIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#FF3B30',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  errorIcon: {
+    fontSize: 40,
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
   progressTitle: {
     fontSize: 24,
     fontWeight: '700',
     color: '#1C1C1E',
-    marginBottom: 12,
+    marginBottom: 24,
     textAlign: 'center',
+  },
+  // Step indicator styles
+  stepsContainer: {
+    width: '100%',
+    backgroundColor: '#F2F2F7',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 24,
+  },
+  stepRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  stepCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  stepCircleComplete: {
+    backgroundColor: '#34C759',
+  },
+  stepCircleCurrent: {
+    backgroundColor: '#007AFF',
+  },
+  stepCirclePending: {
+    backgroundColor: '#E5E5EA',
+  },
+  stepCheckmark: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  stepNumber: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#8E8E93',
+  },
+  stepLabel: {
+    fontSize: 15,
+    flex: 1,
+  },
+  stepLabelComplete: {
+    color: '#34C759',
+    fontWeight: '600',
+  },
+  stepLabelCurrent: {
+    color: '#007AFF',
+    fontWeight: '600',
+  },
+  stepLabelPending: {
+    color: '#8E8E93',
   },
   progressMessage: {
     fontSize: 16,
     color: '#8E8E93',
     textAlign: 'center',
     marginBottom: 24,
+  },
+  errorMessageContainer: {
+    backgroundColor: '#FFEBEB',
+    borderRadius: 12,
+    padding: 16,
+    width: '100%',
+    marginBottom: 24,
+  },
+  errorMessage: {
+    fontSize: 14,
+    color: '#FF3B30',
+    textAlign: 'center',
   },
   txHashContainer: {
     backgroundColor: '#F2F2F7',
@@ -519,12 +739,31 @@ const styles = StyleSheet.create({
   txHashLabel: {
     fontSize: 12,
     color: '#8E8E93',
-    marginBottom: 4,
+    marginBottom: 8,
   },
   txHash: {
     fontSize: 14,
     fontWeight: '500',
     color: '#1C1C1E',
+    fontFamily: 'monospace',
+    marginBottom: 12,
+  },
+  txHashActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  txHashButton: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
+  },
+  txHashButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#007AFF',
   },
   tokenIdContainer: {
     backgroundColor: '#E8F4FF',
@@ -532,6 +771,7 @@ const styles = StyleSheet.create({
     padding: 16,
     width: '100%',
     marginBottom: 24,
+    alignItems: 'center',
   },
   tokenIdLabel: {
     fontSize: 12,
@@ -539,7 +779,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   tokenId: {
-    fontSize: 20,
+    fontSize: 28,
     fontWeight: '700',
     color: '#0066CC',
   },
@@ -548,6 +788,9 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   doneButton: {
+    width: '100%',
+  },
+  explorerButton: {
     width: '100%',
   },
   retryButton: {

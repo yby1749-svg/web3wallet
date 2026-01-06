@@ -4,7 +4,7 @@
  * 지갑의 트랜잭션 히스토리를 표시합니다.
  */
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -22,6 +22,14 @@ import { useWalletStore } from '../../stores/walletStore';
 import { useNetworkStore } from '../../stores/networkStore';
 import { transactionHistoryService } from '../../services/blockchain/TransactionHistoryService';
 
+type FilterType = 'all' | 'sent' | 'received';
+
+const FILTERS: { key: FilterType; label: string }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'sent', label: 'Sent' },
+  { key: 'received', label: 'Received' },
+];
+
 export default function TransactionHistoryScreen() {
   const navigation = useNavigation();
   const { activeWallet } = useWalletStore();
@@ -32,6 +40,15 @@ export default function TransactionHistoryScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [filter, setFilter] = useState<FilterType>('all');
+
+  // Filter transactions based on selected filter
+  const filteredTransactions = useMemo(() => {
+    if (filter === 'all') return transactions;
+    if (filter === 'sent') return transactions.filter((tx) => tx.txType === 'send');
+    if (filter === 'received') return transactions.filter((tx) => tx.txType === 'receive');
+    return transactions;
+  }, [transactions, filter]);
 
   const fetchTransactions = useCallback(
     async (pageNum: number = 1, isRefresh: boolean = false) => {
@@ -181,6 +198,34 @@ export default function TransactionHistoryScreen() {
     );
   };
 
+  // Render filter buttons
+  const renderFilters = () => (
+    <View style={styles.filterContainer}>
+      {FILTERS.map((f) => (
+        <TouchableOpacity
+          key={f.key}
+          style={[
+            styles.filterButton,
+            filter === f.key && styles.filterButtonActive,
+          ]}
+          onPress={() => setFilter(f.key)}
+        >
+          <Text
+            style={[
+              styles.filterButtonText,
+              filter === f.key && styles.filterButtonTextActive,
+            ]}
+          >
+            {f.label}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+
+  // Transaction count
+  const txCount = filteredTransactions.length;
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
@@ -194,9 +239,16 @@ export default function TransactionHistoryScreen() {
         <View style={styles.placeholder} />
       </View>
 
-      <View style={styles.networkBadge}>
-        <Text style={styles.networkText}>{currentChain.name}</Text>
+      <View style={styles.subHeader}>
+        <View style={styles.networkBadge}>
+          <Text style={styles.networkText}>{currentChain.name}</Text>
+        </View>
+        <Text style={styles.txCount}>
+          {txCount} {txCount === 1 ? 'transaction' : 'transactions'}
+        </Text>
       </View>
+
+      {renderFilters()}
 
       {loading && transactions.length === 0 ? (
         <View style={styles.loadingContainer}>
@@ -205,7 +257,7 @@ export default function TransactionHistoryScreen() {
         </View>
       ) : (
         <FlatList
-          data={transactions}
+          data={filteredTransactions}
           renderItem={renderTransaction}
           keyExtractor={(item) => `${item.hash}-${item.timestamp}`}
           contentContainerStyle={styles.listContent}
@@ -257,18 +309,54 @@ const styles = StyleSheet.create({
   placeholder: {
     width: 60,
   },
+  subHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
   networkBadge: {
-    alignSelf: 'center',
     backgroundColor: '#E5E5EA',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
-    marginVertical: 12,
   },
   networkText: {
     fontSize: 12,
     color: '#666666',
     fontWeight: '500',
+  },
+  txCount: {
+    fontSize: 13,
+    color: '#8E8E93',
+  },
+  // Filter styles
+  filterContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    marginBottom: 12,
+    gap: 8,
+  },
+  filterButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#F2F2F7',
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
+  },
+  filterButtonActive: {
+    backgroundColor: '#007AFF',
+    borderColor: '#007AFF',
+  },
+  filterButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#8E8E93',
+  },
+  filterButtonTextActive: {
+    color: '#FFFFFF',
   },
   loadingContainer: {
     flex: 1,

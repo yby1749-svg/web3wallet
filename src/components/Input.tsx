@@ -58,7 +58,7 @@ export const Input: React.FC<InputProps> = ({
         style={[
           styles.inputContainer,
           isFocused && styles.focused,
-          error && styles.error,
+          !!error && styles.error,
           disabled && styles.disabled,
         ]}
       >

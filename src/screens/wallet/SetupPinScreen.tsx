@@ -112,7 +112,7 @@ export const SetupPinScreen: React.FC = () => {
             style={[
               styles.pinDot,
               index < currentPin.length && styles.pinDotFilled,
-              error && styles.pinDotError,
+              !!error && styles.pinDotError,
             ]}
           />
         ))}

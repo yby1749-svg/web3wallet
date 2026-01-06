@@ -92,7 +92,7 @@ export const UnlockScreen: React.FC = () => {
             style={[
               styles.pinDot,
               index < pin.length && styles.pinDotFilled,
-              error && styles.pinDotError,
+              !!error && styles.pinDotError,
             ]}
           />
         ))}
