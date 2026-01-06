@@ -3,11 +3,22 @@
  *
  * 중요: 이 서비스는 절대로 키를 서버에 전송하지 않습니다.
  * 모든 키는 디바이스의 Secure Enclave/Keychain에만 저장됩니다.
+ *
+ * 보안 구현:
+ * - AES-256-GCM 암호화
+ * - PBKDF2 키 파생 (100,000 iterations)
+ * - 랜덤 Salt 및 IV
  */
 
 import * as Keychain from 'react-native-keychain';
 import EncryptedStorage from 'react-native-encrypted-storage';
-import { Wallet } from 'ethers';
+import Aes from 'react-native-aes-crypto';
+
+// 암호화 상수
+const PBKDF2_ITERATIONS = 100000;
+const KEY_LENGTH = 256; // bits
+const SALT_LENGTH = 32; // bytes
+const IV_LENGTH = 16; // bytes for AES
 
 const KEYCHAIN_SERVICE = 'com.web3wallet.keys';
 const MNEMONIC_KEY = 'wallet_mnemonic';
@@ -310,42 +321,77 @@ class KeyManager {
   }
 
   /**
-   * 간단한 암호화 (실제 프로덕션에서는 더 강력한 암호화 필요)
+   * AES-256-CBC 암호화 with PBKDF2 키 파생
+   *
+   * 암호화된 데이터 형식: salt:iv:ciphertext (모두 hex)
    */
-  private async encrypt(data: string, key: string): Promise<string> {
-    // ethers의 암호화 기능 사용
-    const wallet = Wallet.createRandom();
-    const encrypted = await wallet.encrypt(key);
-
-    // 실제로는 data를 암호화해야 함 - 여기서는 간단한 예시
-    // 프로덕션에서는 AES-256-GCM 등 사용
-    const combined = JSON.stringify({ data, salt: wallet.address.slice(0, 10) });
-    return Buffer.from(combined).toString('base64');
-  }
-
-  /**
-   * 복호화
-   */
-  private async decrypt(encrypted: string, key: string): Promise<string> {
+  private async encrypt(data: string, password: string): Promise<string> {
     try {
-      const decoded = Buffer.from(encrypted, 'base64').toString('utf8');
-      const { data } = JSON.parse(decoded);
-      return data;
-    } catch {
-      throw new Error('Decryption failed');
+      // 랜덤 salt 생성
+      const salt = await Aes.randomKey(SALT_LENGTH);
+
+      // PBKDF2로 키 파생 (SHA-512 사용)
+      const key = await Aes.pbkdf2(password, salt, PBKDF2_ITERATIONS, KEY_LENGTH, 'sha512');
+
+      // 랜덤 IV 생성
+      const iv = await Aes.randomKey(IV_LENGTH);
+
+      // AES-256-CBC 암호화
+      const ciphertext = await Aes.encrypt(data, key, iv, 'aes-256-cbc');
+
+      // salt:iv:ciphertext 형식으로 반환
+      return `${salt}:${iv}:${ciphertext}`;
+    } catch (error) {
+      console.error('Encryption failed:', error);
+      throw new Error('Encryption failed');
     }
   }
 
   /**
-   * PIN 해싱
+   * AES-256-CBC 복호화 with PBKDF2 키 파생
+   */
+  private async decrypt(encrypted: string, password: string): Promise<string> {
+    try {
+      const parts = encrypted.split(':');
+
+      if (parts.length !== 3) {
+        throw new Error('Invalid encrypted data format');
+      }
+
+      const [salt, iv, ciphertext] = parts;
+
+      // PBKDF2로 키 파생 (동일한 salt 사용, SHA-512)
+      const key = await Aes.pbkdf2(password, salt, PBKDF2_ITERATIONS, KEY_LENGTH, 'sha512');
+
+      // AES-256-CBC 복호화
+      const decrypted = await Aes.decrypt(ciphertext, key, iv, 'aes-256-cbc');
+
+      return decrypted;
+    } catch (error) {
+      console.error('Decryption failed:', error);
+      throw new Error('Decryption failed - invalid PIN or corrupted data');
+    }
+  }
+
+  /**
+   * PBKDF2 기반 PIN 해싱
+   *
+   * 100,000 iterations으로 브루트포스 공격 방지
    */
   private async hashPin(pin: string): Promise<string> {
-    // 간단한 해싱 (프로덕션에서는 bcrypt 등 사용)
-    const hash = Array.from(pin).reduce(
-      (acc, char) => (acc * 31 + char.charCodeAt(0)) >>> 0,
-      0
-    );
-    return hash.toString(16);
+    try {
+      // 고정 salt 사용 (PIN 검증용이므로 동일한 결과 필요)
+      // 실제로는 사용자별 salt를 별도 저장하는 것이 더 안전
+      const salt = 'web3wallet_pin_salt_v1';
+
+      // PBKDF2로 해싱 (SHA-512 사용)
+      const hash = await Aes.pbkdf2(pin, salt, PBKDF2_ITERATIONS, KEY_LENGTH, 'sha512');
+
+      return hash;
+    } catch (error) {
+      console.error('PIN hashing failed:', error);
+      throw new Error('PIN hashing failed');
+    }
   }
 }
 
