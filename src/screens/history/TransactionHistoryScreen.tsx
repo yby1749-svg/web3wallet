@@ -24,7 +24,7 @@ import { transactionHistoryService } from '../../services/blockchain/Transaction
 
 export default function TransactionHistoryScreen() {
   const navigation = useNavigation();
-  const { currentWallet } = useWalletStore();
+  const { activeWallet } = useWalletStore();
   const { currentChain } = useNetworkStore();
 
   const [transactions, setTransactions] = useState<TransactionHistory[]>([]);
@@ -35,7 +35,7 @@ export default function TransactionHistoryScreen() {
 
   const fetchTransactions = useCallback(
     async (pageNum: number = 1, isRefresh: boolean = false) => {
-      if (!currentWallet?.address) return;
+      if (!activeWallet?.address) return;
 
       try {
         if (isRefresh) {
@@ -45,7 +45,7 @@ export default function TransactionHistoryScreen() {
         }
 
         const txs = await transactionHistoryService.getAllTransactionHistory(
-          currentWallet.address,
+          activeWallet.address,
           pageNum,
           20
         );
@@ -65,7 +65,7 @@ export default function TransactionHistoryScreen() {
         setRefreshing(false);
       }
     },
-    [currentWallet?.address]
+    [activeWallet?.address]
   );
 
   useEffect(() => {

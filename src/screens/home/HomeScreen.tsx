@@ -12,7 +12,7 @@ import {
   RefreshControl,
   TouchableOpacity,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types';
 import { useWalletStore } from '../../stores/walletStore';
@@ -29,17 +29,25 @@ export const HomeScreen: React.FC = () => {
     activeWallet,
     nativeBalance,
     tokens,
+    customTokens,
     totalValueUSD,
     isLoading,
     refreshBalance,
+    loadCustomTokens,
   } = useWalletStore();
   const { currentChain } = useNetworkStore();
 
   useEffect(() => {
-    if (activeWallet) {
-      refreshBalance();
-    }
-  }, [activeWallet]);
+    loadCustomTokens();
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (activeWallet) {
+        refreshBalance();
+      }
+    }, [activeWallet])
+  );
 
   const onRefresh = useCallback(() => {
     refreshBalance();
@@ -126,7 +134,15 @@ export const HomeScreen: React.FC = () => {
 
         {/* Assets */}
         <View style={styles.assetsSection}>
-          <Text style={styles.sectionTitle}>Assets</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Assets</Text>
+            <TouchableOpacity
+              style={styles.addTokenButton}
+              onPress={() => navigation.navigate('AddToken')}
+            >
+              <Text style={styles.addTokenButtonText}>+ Add Token</Text>
+            </TouchableOpacity>
+          </View>
 
           {/* Native Token */}
           {nativeBalance && (
@@ -145,7 +161,16 @@ export const HomeScreen: React.FC = () => {
             />
           ))}
 
-          {tokens.length === 0 && !isLoading && (
+          {/* Custom Tokens */}
+          {customTokens.map((token, index) => (
+            <TokenItem
+              key={`custom-${token.address || index}`}
+              token={token}
+              onPress={() => {}}
+            />
+          ))}
+
+          {tokens.length === 0 && customTokens.length === 0 && !isLoading && (
             <View style={styles.noTokens}>
               <Text style={styles.noTokensText}>
                 No tokens found
@@ -266,11 +291,27 @@ const styles = StyleSheet.create({
   assetsSection: {
     paddingHorizontal: 16,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   sectionTitle: {
     fontSize: 20,
     fontWeight: '700',
     color: '#1C1C1E',
-    marginBottom: 16,
+  },
+  addTokenButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  addTokenButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
   noTokens: {
     backgroundColor: '#FFFFFF',

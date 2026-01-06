@@ -7,6 +7,9 @@ import { Wallet, Token, NativeToken } from '../types';
 import { walletService } from '../services/wallet/WalletService';
 import { tokenService } from '../services/blockchain/TokenService';
 import { keyManager } from '../services/wallet/KeyManager';
+import EncryptedStorage from 'react-native-encrypted-storage';
+
+const CUSTOM_TOKENS_KEY = 'custom_tokens';
 
 interface WalletState {
   // 상태
@@ -14,6 +17,7 @@ interface WalletState {
   activeWallet: Wallet | null;
   nativeBalance: NativeToken | null;
   tokens: Token[];
+  customTokens: Token[];
   totalValueUSD: number;
   isLoading: boolean;
   isUnlocked: boolean;
@@ -27,6 +31,9 @@ interface WalletState {
   createWallet: (pin: string) => Promise<boolean>;
   importWallet: (mnemonic: string, pin: string) => Promise<boolean>;
   refreshBalance: () => Promise<void>;
+  addCustomToken: (token: Token) => Promise<boolean>;
+  removeCustomToken: (tokenAddress: string) => Promise<void>;
+  loadCustomTokens: () => Promise<void>;
   clearError: () => void;
   reset: () => void;
 }
@@ -37,6 +44,7 @@ export const useWalletStore = create<WalletState>((set, get) => ({
   activeWallet: null,
   nativeBalance: null,
   tokens: [],
+  customTokens: [],
   totalValueUSD: 0,
   isLoading: false,
   isUnlocked: false,
@@ -166,12 +174,64 @@ export const useWalletStore = create<WalletState>((set, get) => ({
 
   clearError: () => set({ error: null }),
 
+  addCustomToken: async (token: Token) => {
+    try {
+      const { customTokens } = get();
+
+      // 중복 체크
+      if (customTokens.some((t) => t.address.toLowerCase() === token.address.toLowerCase())) {
+        return false;
+      }
+
+      const updatedTokens = [...customTokens, token];
+      await EncryptedStorage.setItem(CUSTOM_TOKENS_KEY, JSON.stringify(updatedTokens));
+      set({ customTokens: updatedTokens });
+
+      // 잔액 새로고침
+      get().refreshBalance();
+      return true;
+    } catch (error) {
+      console.error('Failed to add custom token:', error);
+      return false;
+    }
+  },
+
+  removeCustomToken: async (tokenAddress: string) => {
+    try {
+      const { customTokens } = get();
+      const updatedTokens = customTokens.filter(
+        (t) => t.address.toLowerCase() !== tokenAddress.toLowerCase()
+      );
+
+      await EncryptedStorage.setItem(CUSTOM_TOKENS_KEY, JSON.stringify(updatedTokens));
+      set({ customTokens: updatedTokens });
+
+      // 잔액 새로고침
+      get().refreshBalance();
+    } catch (error) {
+      console.error('Failed to remove custom token:', error);
+    }
+  },
+
+  loadCustomTokens: async () => {
+    try {
+      const stored = await EncryptedStorage.getItem(CUSTOM_TOKENS_KEY);
+      if (stored) {
+        const tokens = JSON.parse(stored);
+        set({ customTokens: tokens });
+      }
+    } catch (error) {
+      console.error('Failed to load custom tokens:', error);
+    }
+  },
+
   reset: () =>
     set({
       wallets: [],
       activeWallet: null,
       nativeBalance: null,
       tokens: [],
+      customTokens: [],
       totalValueUSD: 0,
       isLoading: false,
       isUnlocked: false,

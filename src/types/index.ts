@@ -133,6 +133,7 @@ export type RootStackParamList = {
   Receive: undefined;
   ConfirmTransaction: { transaction: TransactionRequest; token?: Token };
   TransactionHistory: undefined;
+  AddToken: undefined;
   AssetDetail: { token: Token };
   Settings: undefined;
   Security: undefined;

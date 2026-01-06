@@ -26,6 +26,7 @@ import SecurityScreen from '../screens/settings/SecurityScreen';
 import LegalScreen from '../screens/settings/LegalScreen';
 import UnlockScreen from '../screens/onboarding/UnlockScreen';
 import TransactionHistoryScreen from '../screens/history/TransactionHistoryScreen';
+import AddTokenScreen from '../screens/settings/AddTokenScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -108,6 +109,11 @@ export function AppNavigator() {
         <Stack.Screen
           name="TransactionHistory"
           component={TransactionHistoryScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="AddToken"
+          component={AddTokenScreen}
           options={{ headerShown: false }}
         />
 
