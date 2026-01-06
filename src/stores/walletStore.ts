@@ -9,9 +9,11 @@ import { tokenService } from '../services/blockchain/TokenService';
 import { nftService } from '../services/blockchain/NFTService';
 import { keyManager } from '../services/wallet/KeyManager';
 import { providerService } from '../services/blockchain/ProviderService';
+import { solanaProviderService } from '../services/solana/SolanaProviderService';
 import EncryptedStorage from 'react-native-encrypted-storage';
 
 const CUSTOM_TOKENS_KEY = 'custom_tokens';
+const SOLANA_ADDRESS_KEY = 'solana_address';
 
 interface WalletState {
   // 상태
@@ -27,6 +29,10 @@ interface WalletState {
   isUnlocked: boolean;
   error: string | null;
 
+  // Solana 상태
+  solanaAddress: string | null;
+  solanaBalance: number;
+
   // 액션
   setWallets: (wallets: Wallet[]) => void;
   setActiveWallet: (wallet: Wallet | null) => void;
@@ -41,6 +47,10 @@ interface WalletState {
   loadCustomTokens: () => Promise<void>;
   clearError: () => void;
   reset: () => void;
+
+  // Solana 액션
+  loadSolanaAddress: () => Promise<void>;
+  refreshSolanaBalance: () => Promise<void>;
 }
 
 export const useWalletStore = create<WalletState>((set, get) => ({
@@ -56,6 +66,10 @@ export const useWalletStore = create<WalletState>((set, get) => ({
   isLoadingNFTs: false,
   isUnlocked: false,
   error: null,
+
+  // Solana 초기 상태
+  solanaAddress: null,
+  solanaBalance: 0,
 
   // 액션
   setWallets: (wallets) => set({ wallets }),
@@ -103,11 +117,18 @@ export const useWalletStore = create<WalletState>((set, get) => ({
         createdAt: Date.now(),
       };
 
+      // Generate and save Solana address
+      const solAddress = await walletService.getSolanaAddress(pin);
+      if (solAddress) {
+        await EncryptedStorage.setItem(SOLANA_ADDRESS_KEY, solAddress);
+      }
+
       set((state) => ({
         wallets: [...state.wallets, newWallet],
         activeWallet: newWallet,
         isUnlocked: true,
         isLoading: false,
+        solanaAddress: solAddress,
       }));
 
       return true;
@@ -135,11 +156,18 @@ export const useWalletStore = create<WalletState>((set, get) => ({
         createdAt: Date.now(),
       };
 
+      // Generate and save Solana address
+      const solAddress = await walletService.getSolanaAddress(pin);
+      if (solAddress) {
+        await EncryptedStorage.setItem(SOLANA_ADDRESS_KEY, solAddress);
+      }
+
       set((state) => ({
         wallets: [...state.wallets, newWallet],
         activeWallet: newWallet,
         isUnlocked: true,
         isLoading: false,
+        solanaAddress: solAddress,
       }));
 
       return true;
@@ -268,5 +296,31 @@ export const useWalletStore = create<WalletState>((set, get) => ({
       isLoadingNFTs: false,
       isUnlocked: false,
       error: null,
+      solanaAddress: null,
+      solanaBalance: 0,
     }),
+
+  // Solana 액션
+  loadSolanaAddress: async () => {
+    try {
+      const stored = await EncryptedStorage.getItem(SOLANA_ADDRESS_KEY);
+      if (stored) {
+        set({ solanaAddress: stored });
+      }
+    } catch (error) {
+      console.error('Failed to load Solana address:', error);
+    }
+  },
+
+  refreshSolanaBalance: async () => {
+    const { solanaAddress } = get();
+    if (!solanaAddress) return;
+
+    try {
+      const balance = await solanaProviderService.getBalance(solanaAddress);
+      set({ solanaBalance: balance });
+    } catch (error) {
+      console.error('Failed to refresh Solana balance:', error);
+    }
+  },
 }));

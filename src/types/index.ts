@@ -1,14 +1,28 @@
+// Blockchain Types
+export type BlockchainType = 'evm' | 'solana';
+
 // Wallet Types
 export interface Wallet {
   address: string;
   name: string;
   createdAt: number;
+  blockchain?: BlockchainType; // Default: 'evm'
+}
+
+// Multi-chain wallet - stores addresses for all chains derived from same mnemonic
+export interface MultiChainWallet {
+  id: string;
+  name: string;
+  createdAt: number;
+  evmAddress: string;      // Ethereum/EVM chains address (0x...)
+  solanaAddress: string;   // Solana address (base58)
 }
 
 export interface WalletAccount {
   address: string;
   privateKey: string;
   mnemonic?: string;
+  blockchain?: BlockchainType;
 }
 
 // Token Types
@@ -200,4 +214,28 @@ export interface PriceData {
     usd: number;
     usd_24h_change?: number;
   };
+}
+
+// Solana Types
+export interface SolanaToken {
+  mint: string;
+  symbol: string;
+  name: string;
+  decimals: number;
+  logoURI?: string;
+  balance?: string;
+  balanceUSD?: number;
+}
+
+export interface SolanaTransaction {
+  signature: string;
+  from: string;
+  to: string;
+  amount: number;
+  timestamp: number;
+  status: 'pending' | 'confirmed' | 'finalized' | 'failed';
+  fee: number;
+  type: 'sol' | 'spl-token';
+  tokenMint?: string;
+  tokenSymbol?: string;
 }

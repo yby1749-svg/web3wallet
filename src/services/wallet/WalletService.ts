@@ -7,8 +7,9 @@
  */
 
 import { ethers, HDNodeWallet, Mnemonic } from 'ethers';
-import { WalletAccount } from '../../types';
+import { WalletAccount, MultiChainWallet } from '../../types';
 import { keyManager } from './KeyManager';
+import { solanaWalletService } from '../solana/SolanaWalletService';
 import 'react-native-get-random-values';
 
 // BIP44 경로: m/44'/60'/0'/0/index
@@ -219,6 +220,62 @@ class WalletService {
    */
   isValidAddress(address: string): boolean {
     return ethers.isAddress(address);
+  }
+
+  /**
+   * 니모닉으로부터 멀티체인 지갑 생성 (EVM + Solana)
+   */
+  createMultiChainWallet(mnemonic: string, index: number = 0): MultiChainWallet {
+    // EVM 지갑 생성
+    const evmWallet = this.createWalletFromMnemonic(mnemonic, index);
+
+    // Solana 지갑 생성
+    const solanaAddress = solanaWalletService.getAddressFromMnemonic(mnemonic, index);
+
+    return {
+      id: `wallet-${Date.now()}`,
+      name: index === 0 ? 'Main Wallet' : `Wallet ${index + 1}`,
+      createdAt: Date.now(),
+      evmAddress: evmWallet.address,
+      solanaAddress: solanaAddress,
+    };
+  }
+
+  /**
+   * Solana 주소 가져오기 (저장된 니모닉 사용)
+   */
+  async getSolanaAddress(pin: string, accountIndex: number = 0): Promise<string | null> {
+    try {
+      const mnemonic = await keyManager.retrieveMnemonic(pin);
+      if (!mnemonic) return null;
+
+      return solanaWalletService.getAddressFromMnemonic(mnemonic, accountIndex);
+    } catch (error) {
+      console.error('Failed to get Solana address:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Solana 키페어 가져오기 (트랜잭션 서명용)
+   */
+  async getSolanaKeypair(pin: string, accountIndex: number = 0) {
+    try {
+      const mnemonic = await keyManager.retrieveMnemonic(pin);
+      if (!mnemonic) return null;
+
+      return solanaWalletService.deriveKeypairFromMnemonic(mnemonic, accountIndex);
+    } catch (error) {
+      console.error('Failed to get Solana keypair:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Solana 주소 유효성 검사
+   */
+  isValidSolanaAddress(address: string): boolean {
+    return solanaWalletService.isValidAddress(address);
   }
 }
 

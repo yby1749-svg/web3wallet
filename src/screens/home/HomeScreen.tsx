@@ -21,6 +21,7 @@ import { useNetworkStore } from '../../stores/networkStore';
 import { Button } from '../../components/Button';
 import { TokenItem } from '../../components/TokenItem';
 import { formatCurrency, shortenAddress } from '../../utils/format';
+import Clipboard from '@react-native-clipboard/clipboard';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -36,11 +37,16 @@ export const HomeScreen: React.FC = () => {
     isLoading,
     refreshBalance,
     loadCustomTokens,
+    solanaAddress,
+    solanaBalance,
+    loadSolanaAddress,
+    refreshSolanaBalance,
   } = useWalletStore();
   const { currentChain } = useNetworkStore();
 
   useEffect(() => {
     loadCustomTokens();
+    loadSolanaAddress();
   }, []);
 
   useFocusEffect(
@@ -48,12 +54,22 @@ export const HomeScreen: React.FC = () => {
       if (activeWallet) {
         refreshBalance();
       }
-    }, [activeWallet])
+      if (solanaAddress) {
+        refreshSolanaBalance();
+      }
+    }, [activeWallet, solanaAddress])
   );
 
   const onRefresh = useCallback(() => {
     refreshBalance();
+    refreshSolanaBalance();
   }, []);
+
+  const copySolanaAddress = () => {
+    if (solanaAddress) {
+      Clipboard.setString(solanaAddress);
+    }
+  };
 
   if (!activeWallet) {
     return (
@@ -100,6 +116,33 @@ export const HomeScreen: React.FC = () => {
             ≈ {nativeBalance?.balance || '0'} {currentChain.symbol}
           </Text>
         </View>
+
+        {/* Solana Wallet Card */}
+        {solanaAddress && (
+          <TouchableOpacity
+            style={styles.solanaCard}
+            onPress={copySolanaAddress}
+            activeOpacity={0.8}
+          >
+            <View style={styles.solanaHeader}>
+              <View style={styles.solanaLogoContainer}>
+                <Text style={styles.solanaLogo}>◎</Text>
+              </View>
+              <View style={styles.solanaInfo}>
+                <Text style={styles.solanaLabel}>Solana Wallet</Text>
+                <Text style={styles.solanaAddress}>
+                  {shortenAddress(solanaAddress, 6)}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.solanaBalanceContainer}>
+              <Text style={styles.solanaBalance}>
+                {solanaBalance.toFixed(4)} SOL
+              </Text>
+              <Text style={styles.solanaTapHint}>Tap to copy</Text>
+            </View>
+          </TouchableOpacity>
+        )}
 
         {/* Action Buttons */}
         <View style={styles.actions}>
@@ -311,6 +354,60 @@ const styles = StyleSheet.create({
   balanceSubtext: {
     color: 'rgba(255,255,255,0.8)',
     fontSize: 16,
+  },
+  // Solana Card Styles
+  solanaCard: {
+    backgroundColor: '#9945FF',
+    marginHorizontal: 16,
+    marginTop: 12,
+    borderRadius: 16,
+    padding: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  solanaHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  solanaLogoContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  solanaLogo: {
+    fontSize: 24,
+    color: '#FFFFFF',
+  },
+  solanaInfo: {
+    justifyContent: 'center',
+  },
+  solanaLabel: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 12,
+    marginBottom: 2,
+  },
+  solanaAddress: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontFamily: 'monospace',
+  },
+  solanaBalanceContainer: {
+    alignItems: 'flex-end',
+  },
+  solanaBalance: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  solanaTapHint: {
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 10,
+    marginTop: 2,
   },
   actions: {
     flexDirection: 'row',
