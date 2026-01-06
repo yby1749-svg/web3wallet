@@ -10,6 +10,7 @@ import {
   SafeAreaView,
   ScrollView,
   Alert,
+  TouchableOpacity,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -28,7 +29,7 @@ type RouteProps = RouteProp<RootStackParamList, 'Send'>;
 export const SendScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
-  const { token } = route.params || {};
+  const { token, scannedAddress } = route.params || {};
 
   const { activeWallet, nativeBalance } = useWalletStore();
   const { currentChain } = useNetworkStore();
@@ -43,6 +44,14 @@ export const SendScreen: React.FC = () => {
   useEffect(() => {
     loadGasFees();
   }, []);
+
+  // Handle scanned address from QR scanner
+  useEffect(() => {
+    if (scannedAddress) {
+      setToAddress(scannedAddress);
+      setErrors((prev) => ({ ...prev, address: undefined }));
+    }
+  }, [scannedAddress]);
 
   const loadGasFees = async () => {
     try {
@@ -95,6 +104,15 @@ export const SendScreen: React.FC = () => {
     }
   };
 
+  const handleScanQR = () => {
+    navigation.navigate('QRScanner', {
+      onScan: (address: string) => {
+        setToAddress(address);
+        setErrors((prev) => ({ ...prev, address: undefined }));
+      },
+    });
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
@@ -114,17 +132,24 @@ export const SendScreen: React.FC = () => {
         </View>
 
         <View style={styles.section}>
-          <Input
-            label="To Address"
-            value={toAddress}
-            onChangeText={(text) => {
-              setToAddress(text);
-              setErrors({ ...errors, address: undefined });
-            }}
-            placeholder="0x..."
-            autoCapitalize="none"
-            error={errors.address}
-          />
+          <View style={styles.addressInputContainer}>
+            <View style={styles.addressInputWrapper}>
+              <Input
+                label="To Address"
+                value={toAddress}
+                onChangeText={(text) => {
+                  setToAddress(text);
+                  setErrors({ ...errors, address: undefined });
+                }}
+                placeholder="0x..."
+                autoCapitalize="none"
+                error={errors.address}
+              />
+            </View>
+            <TouchableOpacity style={styles.qrButton} onPress={handleScanQR}>
+              <Text style={styles.qrButtonText}>📷</Text>
+            </TouchableOpacity>
+          </View>
 
           <Input
             label="Amount"
@@ -214,6 +239,26 @@ const styles = StyleSheet.create({
     color: '#007AFF',
     fontSize: 14,
     fontWeight: '600',
+  },
+  addressInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  addressInputWrapper: {
+    flex: 1,
+  },
+  qrButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: '#007AFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 8,
+    marginTop: 24,
+  },
+  qrButtonText: {
+    fontSize: 20,
   },
   warningBox: {
     backgroundColor: '#FFF3CD',

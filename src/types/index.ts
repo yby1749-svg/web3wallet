@@ -129,11 +129,12 @@ export type RootStackParamList = {
   SetupPin: { isNewWallet: boolean; mnemonic?: string };
   Main: undefined;
   Home: undefined;
-  Send: { token?: Token };
+  Send: { token?: Token; scannedAddress?: string };
   Receive: undefined;
   ConfirmTransaction: { transaction: TransactionRequest; token?: Token };
   TransactionHistory: undefined;
   AddToken: undefined;
+  QRScanner: { onScan?: (address: string) => void };
   AssetDetail: { token: Token };
   Settings: undefined;
   Security: undefined;

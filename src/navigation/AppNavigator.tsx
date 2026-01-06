@@ -27,6 +27,7 @@ import LegalScreen from '../screens/settings/LegalScreen';
 import UnlockScreen from '../screens/onboarding/UnlockScreen';
 import TransactionHistoryScreen from '../screens/history/TransactionHistoryScreen';
 import AddTokenScreen from '../screens/settings/AddTokenScreen';
+import QRScannerScreen from '../screens/transfer/QRScannerScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -115,6 +116,14 @@ export function AppNavigator() {
           name="AddToken"
           component={AddTokenScreen}
           options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="QRScanner"
+          component={QRScannerScreen}
+          options={{
+            headerShown: false,
+            presentation: 'fullScreenModal',
+          }}
         />
 
         {/* Settings */}
