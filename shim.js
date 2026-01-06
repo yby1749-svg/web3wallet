@@ -3,6 +3,9 @@
  * This file MUST be imported before any other imports
  */
 
+// WalletConnect polyfill (must be first)
+import '@walletconnect/react-native-compat';
+
 // Polyfill for crypto.getRandomValues (required by ethers.js)
 import 'react-native-get-random-values';
 

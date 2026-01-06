@@ -18,6 +18,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types';
 import { useWalletStore } from '../../stores/walletStore';
 import { useNetworkStore } from '../../stores/networkStore';
+import { useWalletConnectStore } from '../../stores/walletConnectStore';
 import { keyManager } from '../../services/wallet/KeyManager';
 import { shortenAddress } from '../../utils/format';
 
@@ -54,6 +55,7 @@ export const SettingsScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const { activeWallet, reset } = useWalletStore();
   const { currentChain, availableChains, setChain } = useNetworkStore();
+  const { sessions } = useWalletConnectStore();
 
   const handleNetworkChange = () => {
     Alert.alert(
@@ -110,6 +112,12 @@ export const SettingsScreen: React.FC = () => {
               title="Network"
               subtitle={currentChain.name}
               onPress={handleNetworkChange}
+            />
+            <SettingItem
+              icon="📱"
+              title="WalletConnect"
+              subtitle={sessions.length > 0 ? `${sessions.length} connected` : 'Connect to dApps'}
+              onPress={() => navigation.navigate('WalletConnect')}
             />
           </View>
         </View>

@@ -140,6 +140,10 @@ export type RootStackParamList = {
   Security: undefined;
   Legal: undefined;
   UnlockScreen: undefined;
+  // WalletConnect screens
+  WalletConnect: undefined;
+  SessionApproval: undefined;
+  SignRequest: undefined;
 };
 
 export type MainTabParamList = {

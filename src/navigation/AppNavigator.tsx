@@ -2,11 +2,13 @@
  * 앱 네비게이션
  */
 
-import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import React, { useEffect, useRef } from 'react';
+import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { RootStackParamList, MainTabParamList } from '../types';
+import { useWalletConnectStore } from '../stores/walletConnectStore';
+import { useWalletStore } from '../stores/walletStore';
 
 // Screens
 import SplashScreen from '../screens/onboarding/SplashScreen';
@@ -28,6 +30,11 @@ import UnlockScreen from '../screens/onboarding/UnlockScreen';
 import TransactionHistoryScreen from '../screens/history/TransactionHistoryScreen';
 import AddTokenScreen from '../screens/settings/AddTokenScreen';
 import QRScannerScreen from '../screens/transfer/QRScannerScreen';
+
+// WalletConnect Screens
+import WalletConnectScreen from '../screens/walletconnect/WalletConnectScreen';
+import SessionApprovalScreen from '../screens/walletconnect/SessionApprovalScreen';
+import SignRequestScreen from '../screens/walletconnect/SignRequestScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -64,10 +71,44 @@ function MainTabs() {
   );
 }
 
+// WalletConnect Navigation Handler
+function WalletConnectNavigationHandler({
+  navigationRef,
+}: {
+  navigationRef: React.RefObject<NavigationContainerRef<RootStackParamList>>;
+}) {
+  const { pendingProposal, pendingRequest } = useWalletConnectStore();
+  const { isUnlocked } = useWalletStore();
+
+  useEffect(() => {
+    // Only navigate if wallet is unlocked
+    if (!isUnlocked || !navigationRef.current) return;
+
+    // Navigate to SessionApproval if there's a pending proposal
+    if (pendingProposal) {
+      navigationRef.current.navigate('SessionApproval');
+    }
+  }, [pendingProposal, isUnlocked, navigationRef]);
+
+  useEffect(() => {
+    // Only navigate if wallet is unlocked
+    if (!isUnlocked || !navigationRef.current) return;
+
+    // Navigate to SignRequest if there's a pending request
+    if (pendingRequest) {
+      navigationRef.current.navigate('SignRequest');
+    }
+  }, [pendingRequest, isUnlocked, navigationRef]);
+
+  return null;
+}
+
 // 루트 스택 네비게이터
 export function AppNavigator() {
+  const navigationRef = useRef<NavigationContainerRef<RootStackParamList>>(null);
+
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <Stack.Navigator
         initialRouteName="Splash"
         screenOptions={{
@@ -137,7 +178,31 @@ export function AppNavigator() {
           component={LegalScreen}
           options={{ headerShown: true, title: 'Legal' }}
         />
+
+        {/* WalletConnect */}
+        <Stack.Screen
+          name="WalletConnect"
+          component={WalletConnectScreen}
+          options={{ headerShown: true, title: 'WalletConnect' }}
+        />
+        <Stack.Screen
+          name="SessionApproval"
+          component={SessionApprovalScreen}
+          options={{
+            headerShown: false,
+            presentation: 'fullScreenModal',
+          }}
+        />
+        <Stack.Screen
+          name="SignRequest"
+          component={SignRequestScreen}
+          options={{
+            headerShown: false,
+            presentation: 'fullScreenModal',
+          }}
+        />
       </Stack.Navigator>
+      <WalletConnectNavigationHandler navigationRef={navigationRef} />
     </NavigationContainer>
   );
 }
