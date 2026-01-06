@@ -25,6 +25,7 @@ import SettingsScreen from '../screens/settings/SettingsScreen';
 import SecurityScreen from '../screens/settings/SecurityScreen';
 import LegalScreen from '../screens/settings/LegalScreen';
 import UnlockScreen from '../screens/onboarding/UnlockScreen';
+import TransactionHistoryScreen from '../screens/history/TransactionHistoryScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -103,6 +104,11 @@ export function AppNavigator() {
           name="ConfirmTransaction"
           component={ConfirmTransactionScreen}
           options={{ headerShown: true, title: 'Confirm' }}
+        />
+        <Stack.Screen
+          name="TransactionHistory"
+          component={TransactionHistoryScreen}
+          options={{ headerShown: false }}
         />
 
         {/* Settings */}

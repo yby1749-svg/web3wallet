@@ -112,6 +112,16 @@ export const HomeScreen: React.FC = () => {
             </View>
             <Text style={styles.actionLabel}>Receive</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => navigation.navigate('TransactionHistory')}
+          >
+            <View style={styles.actionIcon}>
+              <Text style={styles.actionIconText}>📋</Text>
+            </View>
+            <Text style={styles.actionLabel}>History</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Assets */}

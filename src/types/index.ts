@@ -55,6 +55,24 @@ export interface Transaction {
   status?: 'pending' | 'confirmed' | 'failed';
 }
 
+// Transaction History Types
+export interface TransactionHistory {
+  hash: string;
+  from: string;
+  to: string;
+  value: string;
+  timestamp: number;
+  blockNumber: number;
+  gasUsed: string;
+  gasPrice: string;
+  isError: boolean;
+  txType: 'send' | 'receive' | 'contract';
+  tokenSymbol?: string;
+  tokenName?: string;
+  tokenDecimal?: number;
+  tokenValue?: string;
+}
+
 export interface TransactionRequest {
   to: string;
   value: string;
@@ -114,6 +132,7 @@ export type RootStackParamList = {
   Send: { token?: Token };
   Receive: undefined;
   ConfirmTransaction: { transaction: TransactionRequest; token?: Token };
+  TransactionHistory: undefined;
   AssetDetail: { token: Token };
   Settings: undefined;
   Security: undefined;
