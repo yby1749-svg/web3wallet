@@ -105,7 +105,36 @@ export interface NFT {
   name?: string;
   description?: string;
   imageUrl?: string;
+  animationUrl?: string;
   collectionName?: string;
+  chainId: number;
+  tokenType: 'ERC721' | 'ERC1155';
+  balance?: string; // For ERC1155 (can own multiple of same token)
+}
+
+export interface NFTCollection {
+  contractAddress: string;
+  name: string;
+  symbol?: string;
+  imageUrl?: string;
+  description?: string;
+  chainId: number;
+  nftCount: number;
+}
+
+export interface NFTMetadata {
+  name?: string;
+  description?: string;
+  image?: string;
+  animation_url?: string;
+  attributes?: NFTAttribute[];
+  external_url?: string;
+}
+
+export interface NFTAttribute {
+  trait_type: string;
+  value: string | number;
+  display_type?: string;
 }
 
 // Settings Types
@@ -144,6 +173,9 @@ export type RootStackParamList = {
   WalletConnect: undefined;
   SessionApproval: undefined;
   SignRequest: undefined;
+  // NFT screens
+  NFTGallery: undefined;
+  NFTDetail: { nft: NFT };
 };
 
 export type MainTabParamList = {

@@ -11,10 +11,11 @@ import {
   ScrollView,
   RefreshControl,
   TouchableOpacity,
+  Image,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../types';
+import { RootStackParamList, NFT } from '../../types';
 import { useWalletStore } from '../../stores/walletStore';
 import { useNetworkStore } from '../../stores/networkStore';
 import { Button } from '../../components/Button';
@@ -30,6 +31,7 @@ export const HomeScreen: React.FC = () => {
     nativeBalance,
     tokens,
     customTokens,
+    nfts,
     totalValueUSD,
     isLoading,
     refreshBalance,
@@ -175,6 +177,53 @@ export const HomeScreen: React.FC = () => {
               <Text style={styles.noTokensText}>
                 No tokens found
               </Text>
+            </View>
+          )}
+        </View>
+
+        {/* NFTs Section */}
+        <View style={styles.nftsSection}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>NFTs</Text>
+            <TouchableOpacity
+              style={styles.viewAllButton}
+              onPress={() => navigation.navigate('NFTGallery')}
+            >
+              <Text style={styles.viewAllButtonText}>View All</Text>
+            </TouchableOpacity>
+          </View>
+
+          {nfts.length > 0 ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.nftScrollContent}
+            >
+              {nfts.slice(0, 5).map((nft) => (
+                <TouchableOpacity
+                  key={`${nft.contractAddress}-${nft.tokenId}`}
+                  style={styles.nftPreviewItem}
+                  onPress={() => navigation.navigate('NFTDetail', { nft })}
+                >
+                  {nft.imageUrl ? (
+                    <Image
+                      source={{ uri: nft.imageUrl }}
+                      style={styles.nftPreviewImage}
+                    />
+                  ) : (
+                    <View style={styles.nftPreviewPlaceholder}>
+                      <Text style={styles.nftPreviewPlaceholderText}>NFT</Text>
+                    </View>
+                  )}
+                  <Text style={styles.nftPreviewName} numberOfLines={1}>
+                    {nft.name || `#${nft.tokenId}`}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          ) : (
+            <View style={styles.noNfts}>
+              <Text style={styles.noNftsText}>No NFTs found</Text>
             </View>
           )}
         </View>
@@ -333,6 +382,61 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#8E8E93',
     marginBottom: 24,
+  },
+  nftsSection: {
+    paddingHorizontal: 16,
+    marginTop: 24,
+  },
+  viewAllButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  viewAllButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#007AFF',
+  },
+  nftScrollContent: {
+    paddingRight: 16,
+  },
+  nftPreviewItem: {
+    width: 100,
+    marginRight: 12,
+  },
+  nftPreviewImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 12,
+    backgroundColor: '#E5E5EA',
+  },
+  nftPreviewPlaceholder: {
+    width: 100,
+    height: 100,
+    borderRadius: 12,
+    backgroundColor: '#E5E5EA',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  nftPreviewPlaceholderText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#8E8E93',
+  },
+  nftPreviewName: {
+    fontSize: 12,
+    color: '#1C1C1E',
+    marginTop: 6,
+    textAlign: 'center',
+  },
+  noNfts: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 24,
+    alignItems: 'center',
+  },
+  noNftsText: {
+    fontSize: 14,
+    color: '#8E8E93',
   },
   legalNotice: {
     marginTop: 32,

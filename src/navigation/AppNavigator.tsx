@@ -36,6 +36,10 @@ import WalletConnectScreen from '../screens/walletconnect/WalletConnectScreen';
 import SessionApprovalScreen from '../screens/walletconnect/SessionApprovalScreen';
 import SignRequestScreen from '../screens/walletconnect/SignRequestScreen';
 
+// NFT Screens
+import NFTGalleryScreen from '../screens/collectibles/NFTGalleryScreen';
+import NFTDetailScreen from '../screens/collectibles/NFTDetailScreen';
+
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
@@ -200,6 +204,18 @@ export function AppNavigator() {
             headerShown: false,
             presentation: 'fullScreenModal',
           }}
+        />
+
+        {/* NFT */}
+        <Stack.Screen
+          name="NFTGallery"
+          component={NFTGalleryScreen}
+          options={{ headerShown: true, title: 'Collectibles' }}
+        />
+        <Stack.Screen
+          name="NFTDetail"
+          component={NFTDetailScreen}
+          options={{ headerShown: true, title: 'NFT Details' }}
         />
       </Stack.Navigator>
       <WalletConnectNavigationHandler navigationRef={navigationRef} />

@@ -3,10 +3,12 @@
  */
 
 import { create } from 'zustand';
-import { Wallet, Token, NativeToken } from '../types';
+import { Wallet, Token, NativeToken, NFT } from '../types';
 import { walletService } from '../services/wallet/WalletService';
 import { tokenService } from '../services/blockchain/TokenService';
+import { nftService } from '../services/blockchain/NFTService';
 import { keyManager } from '../services/wallet/KeyManager';
+import { providerService } from '../services/blockchain/ProviderService';
 import EncryptedStorage from 'react-native-encrypted-storage';
 
 const CUSTOM_TOKENS_KEY = 'custom_tokens';
@@ -18,8 +20,10 @@ interface WalletState {
   nativeBalance: NativeToken | null;
   tokens: Token[];
   customTokens: Token[];
+  nfts: NFT[];
   totalValueUSD: number;
   isLoading: boolean;
+  isLoadingNFTs: boolean;
   isUnlocked: boolean;
   error: string | null;
 
@@ -31,6 +35,7 @@ interface WalletState {
   createWallet: (pin: string) => Promise<boolean>;
   importWallet: (mnemonic: string, pin: string) => Promise<boolean>;
   refreshBalance: () => Promise<void>;
+  loadNFTs: () => Promise<void>;
   addCustomToken: (token: Token) => Promise<boolean>;
   removeCustomToken: (tokenAddress: string) => Promise<void>;
   loadCustomTokens: () => Promise<void>;
@@ -45,8 +50,10 @@ export const useWalletStore = create<WalletState>((set, get) => ({
   nativeBalance: null,
   tokens: [],
   customTokens: [],
+  nfts: [],
   totalValueUSD: 0,
   isLoading: false,
+  isLoadingNFTs: false,
   isUnlocked: false,
   error: null,
 
@@ -166,9 +173,32 @@ export const useWalletStore = create<WalletState>((set, get) => ({
         totalValueUSD: totalValue,
         isLoading: false,
       });
+
+      // Also load NFTs in background
+      get().loadNFTs();
     } catch (error) {
       set({ isLoading: false });
       console.error('Failed to refresh balance:', error);
+    }
+  },
+
+  loadNFTs: async () => {
+    const { activeWallet, isUnlocked } = get();
+    if (!activeWallet || !isUnlocked) return;
+
+    try {
+      set({ isLoadingNFTs: true });
+
+      const chainId = providerService.getCurrentChainId();
+      const nfts = await nftService.getNFTsForOwner(activeWallet.address, chainId);
+
+      set({
+        nfts,
+        isLoadingNFTs: false,
+      });
+    } catch (error) {
+      set({ isLoadingNFTs: false });
+      console.error('Failed to load NFTs:', error);
     }
   },
 
@@ -232,8 +262,10 @@ export const useWalletStore = create<WalletState>((set, get) => ({
       nativeBalance: null,
       tokens: [],
       customTokens: [],
+      nfts: [],
       totalValueUSD: 0,
       isLoading: false,
+      isLoadingNFTs: false,
       isUnlocked: false,
       error: null,
     }),
