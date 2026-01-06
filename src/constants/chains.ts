@@ -1,15 +1,14 @@
 import { Chain } from '../types';
 
-// Alchemy API Key - 실제 배포 시 환경 변수로 관리
-// https://www.alchemy.com 에서 무료 API 키 발급
-export const ALCHEMY_API_KEY = 'YOUR_ALCHEMY_API_KEY';
+// Public RPC endpoints (rate-limited but free)
+// For production, use your own Alchemy/Infura API key
 
 export const CHAINS: Record<number, Chain> = {
   1: {
     chainId: 1,
     name: 'Ethereum',
     symbol: 'ETH',
-    rpcUrl: `https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
+    rpcUrl: 'https://eth.llamarpc.com',
     explorerUrl: 'https://etherscan.io',
     isTestnet: false,
   },
@@ -17,7 +16,7 @@ export const CHAINS: Record<number, Chain> = {
     chainId: 137,
     name: 'Polygon',
     symbol: 'MATIC',
-    rpcUrl: `https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
+    rpcUrl: 'https://polygon.llamarpc.com',
     explorerUrl: 'https://polygonscan.com',
     isTestnet: false,
   },
@@ -25,7 +24,7 @@ export const CHAINS: Record<number, Chain> = {
     chainId: 11155111,
     name: 'Sepolia (Testnet)',
     symbol: 'ETH',
-    rpcUrl: `https://eth-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
+    rpcUrl: 'https://rpc.sepolia.org',
     explorerUrl: 'https://sepolia.etherscan.io',
     isTestnet: true,
   },
@@ -33,7 +32,7 @@ export const CHAINS: Record<number, Chain> = {
     chainId: 80002,
     name: 'Polygon Amoy (Testnet)',
     symbol: 'MATIC',
-    rpcUrl: `https://polygon-amoy.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
+    rpcUrl: 'https://rpc-amoy.polygon.technology',
     explorerUrl: 'https://amoy.polygonscan.com',
     isTestnet: true,
   },
