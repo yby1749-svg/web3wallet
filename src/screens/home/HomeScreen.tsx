@@ -185,12 +185,20 @@ export const HomeScreen: React.FC = () => {
         <View style={styles.nftsSection}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>NFTs</Text>
-            <TouchableOpacity
-              style={styles.viewAllButton}
-              onPress={() => navigation.navigate('NFTGallery')}
-            >
-              <Text style={styles.viewAllButtonText}>View All</Text>
-            </TouchableOpacity>
+            <View style={styles.nftHeaderButtons}>
+              <TouchableOpacity
+                style={styles.mintNftButton}
+                onPress={() => navigation.navigate('MintNFT')}
+              >
+                <Text style={styles.mintNftButtonText}>+ Mint</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.viewAllButton}
+                onPress={() => navigation.navigate('NFTGallery')}
+              >
+                <Text style={styles.viewAllButtonText}>View All</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {nfts.length > 0 ? (
@@ -386,6 +394,22 @@ const styles = StyleSheet.create({
   nftsSection: {
     paddingHorizontal: 16,
     marginTop: 24,
+  },
+  nftHeaderButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  mintNftButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginRight: 8,
+  },
+  mintNftButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
   viewAllButton: {
     paddingHorizontal: 12,

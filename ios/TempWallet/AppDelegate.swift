@@ -18,15 +18,7 @@ class AppDelegate: RCTAppDelegate {
   }
 
   override func bundleURL() -> URL? {
-#if DEBUG
-    // Try Metro bundler first
-    if let metroURL = RCTBundleURLProvider.sharedSettings().jsBundleURL(forBundleRoot: "index") {
-      return metroURL
-    }
-    // Fallback to pre-bundled JS
+    // Always use embedded bundle
     return Bundle.main.url(forResource: "main", withExtension: "jsbundle")
-#else
-    return Bundle.main.url(forResource: "main", withExtension: "jsbundle")
-#endif
   }
 }

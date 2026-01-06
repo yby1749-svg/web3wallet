@@ -11,6 +11,7 @@ import {
   FlatList,
   RefreshControl,
   ActivityIndicator,
+  TouchableOpacity,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -37,6 +38,10 @@ export const NFTGalleryScreen: React.FC = () => {
 
   const handleRefresh = () => {
     loadNFTs();
+  };
+
+  const handleMintNFT = () => {
+    navigation.navigate('MintNFT');
   };
 
   const renderNFT = ({ item }: { item: NFT }) => (
@@ -66,10 +71,17 @@ export const NFTGalleryScreen: React.FC = () => {
 
   const renderHeader = () => (
     <View style={styles.header}>
-      <Text style={styles.title}>Collectibles</Text>
-      <Text style={styles.subtitle}>
-        {nfts.length} {nfts.length === 1 ? 'item' : 'items'}
-      </Text>
+      <View style={styles.headerTop}>
+        <View>
+          <Text style={styles.title}>Collectibles</Text>
+          <Text style={styles.subtitle}>
+            {nfts.length} {nfts.length === 1 ? 'item' : 'items'}
+          </Text>
+        </View>
+        <TouchableOpacity style={styles.mintButton} onPress={handleMintNFT}>
+          <Text style={styles.mintButtonText}>+ Mint NFT</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
@@ -111,6 +123,22 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 16,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  mintButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  mintButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
   },
   title: {
     fontSize: 28,

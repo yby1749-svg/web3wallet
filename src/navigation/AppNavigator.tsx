@@ -39,6 +39,7 @@ import SignRequestScreen from '../screens/walletconnect/SignRequestScreen';
 // NFT Screens
 import NFTGalleryScreen from '../screens/collectibles/NFTGalleryScreen';
 import NFTDetailScreen from '../screens/collectibles/NFTDetailScreen';
+import MintNFTScreen from '../screens/collectibles/MintNFTScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -216,6 +217,11 @@ export function AppNavigator() {
           name="NFTDetail"
           component={NFTDetailScreen}
           options={{ headerShown: true, title: 'NFT Details' }}
+        />
+        <Stack.Screen
+          name="MintNFT"
+          component={MintNFTScreen}
+          options={{ headerShown: true, title: 'Mint NFT' }}
         />
       </Stack.Navigator>
       <WalletConnectNavigationHandler navigationRef={navigationRef} />

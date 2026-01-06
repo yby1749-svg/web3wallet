@@ -176,6 +176,7 @@ export type RootStackParamList = {
   // NFT screens
   NFTGallery: undefined;
   NFTDetail: { nft: NFT };
+  MintNFT: undefined;
 };
 
 export type MainTabParamList = {

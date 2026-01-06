@@ -25,10 +25,14 @@ export const SplashScreen: React.FC = () => {
 
       // 2초 후 다음 화면으로 이동
       setTimeout(() => {
-        if (wallets.length > 0 && hasSetupPin) {
+        // 최신 상태 가져오기
+        const currentWallets = useWalletStore.getState().wallets;
+        const currentHasPin = useSettingsStore.getState().hasSetupPin;
+
+        if (currentWallets.length > 0 && currentHasPin) {
           // 기존 지갑이 있으면 잠금 해제 화면으로
           navigation.replace('UnlockScreen');
-        } else if (wallets.length > 0) {
+        } else if (currentWallets.length > 0) {
           // 지갑은 있지만 PIN이 없으면 메인으로
           navigation.replace('Main');
         } else {
